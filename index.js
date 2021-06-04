@@ -6,8 +6,8 @@ const https = require('https')
 const app = express()
 const port = process.env.PORT || 3001
 
-const hostName = 'msqa01.qmatic.cloud'
-const basicAuth = 'Basic dGVzdDpUZXN0QDIwMjE='
+const hostName = ''
+const basicAuth = ''
 
 
 app.use(express.json())
