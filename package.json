@@ -1,0 +1,17 @@
+{
+  "name": "mt-server",
+  "version": "1.0.0",
+  "description": "NodeJS Application for MT test",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "node index.js",
+    "start": "npm run start:prod",
+    "start:prod": "npm install && npm run server"
+  },
+  "author": "kasun",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.2"
+  }
+}
