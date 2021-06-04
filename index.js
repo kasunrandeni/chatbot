@@ -4,7 +4,7 @@ const https = require('https')
 // import env variables
 
 const app = express()
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 433
 
 const hostName = 'msqa01.qmatic.cloud'
 const basicAuth = 'Basic dGVzdDpUZXN0QDIwMjE='
