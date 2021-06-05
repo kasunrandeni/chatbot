@@ -69,22 +69,17 @@ app.post('/getticket', (req, res) => {
 	var reqPath = '';
 	var sourceName = 'getbranch'
 	if  (action === 'getbranches') {
-		var branchRes = { "fulfillmentMessages": [
-			{
-			  "card": {
-				"title": "Branch List",
-				"subtitle": "Branches",
-				"imageUri": "https://example.com/images/example.png",
-				"buttons": []
+		var branchRes = {
+			"fulfillmentMessages": [
+			  {
+				"text": {
+				  "text": []
+				}
 			  }
-			}
-		  ]
-		}
+			]
+		  }
 		branchData.forEach(x => {
-			branchRes.fulfillmentMessages[0].card.buttons.push({
-				"text": x.name,
-				"postback": "https://example.com/path/for/end-user/to/follow"
-			  })
+			branchRes.fulfillmentMessages[0].text.text.push(x.name)
 		});
 		
 		return res.json(branchRes)
@@ -123,22 +118,17 @@ app.post('/getticket', (req, res) => {
   
 				  var resText = ''
 				  if (action === 'getservices') {
-					var serviceRes = { "fulfillmentMessages": [
-						{
-						  "card": {
-							"title": "Service List",
-							"subtitle": "Services",
-							"imageUri": "https://example.com/images/example.png",
-							"buttons": []
+					var serviceRes = {
+						"fulfillmentMessages": [
+						  {
+							"text": {
+							  "text": []
+							}
 						  }
-						}
-					  ]
-					}
+						]
+					  }
 					resObj.forEach(x => {
-						serviceRes.fulfillmentMessages[0].card.buttons.push({
-							"text": x.externalName,
-							"postback": "https://example.com/path/for/end-user/to/follow"
-						  })
+						serviceRes.fulfillmentMessages[0].text.text.push(x.externalName)
 					});
 
 					return res.json(serviceRes)
