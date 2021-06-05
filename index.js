@@ -9,6 +9,37 @@ const port = process.env.PORT || 3001
 const hostName = 'msqa01.qmatic.cloud'
 const basicAuth = 'Basic dGVzdDpUZXN0QDIwMjE='
 
+var branchData = [];
+
+const loadBranches = function(){
+	var options = {
+		host: hostName,
+		port: 443,
+		path: '/rest/entrypoint/branches',
+		// authentication headers
+		headers: {
+		   'Authorization': basicAuth
+		}   
+	  };
+	
+	https.get(
+		options,
+		responseFromAPI => {
+			let completeResponse = ''
+			responseFromAPI.on('data', chunk => {
+				completeResponse += chunk
+			})
+			responseFromAPI.on('end', () => {
+				const resObj = JSON.parse(completeResponse)
+				branchData = resObj;
+			})
+		},
+		error => {
+			console.log('error for load branches')
+		}
+	)
+}
+
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
@@ -18,26 +49,39 @@ app.get('/', (req, res) => {
 })
 
 app.listen(port, () => {
+	loadBranches();
 	console.log(`🌏 Server is running at http://localhost:${port}`)
 })
 
 app.post('/getticket', (req, res) => {
 
-	const branchId = req.body.queryResult.parameters.branch
+	const action = req.body.queryResult.action;
+	const branchName = req.body.queryResult.parameters.branch
 
-	console.log(branchId)
+	console.log('action name --- ' + action)
 
 	const serviceId = req.body.queryResult.parameters.service
 
+	console.log('branch - ' + branchName + ' --- service - ' + serviceId)
+
 	console.log(serviceId)
 
-	var reqPath = '/rest/entrypoint/branches';
+	var reqPath = '';
 	var sourceName = 'getbranch'
-	if (branchId !== undefined) {
-		reqPath = '/rest/entrypoint/branches/' + branchId + '/services';
+	if  (branchName === undefined) {
+		return res.json({
+			fulfillmentText: branchData[0].name,
+			source: sourceName
+		})
+	}
+	if (branchName !== undefined) {
+		let branchMap = branchData.find(x =>{
+			return x.name === branchName;
+		})
+		reqPath = '/rest/entrypoint/branches/' + branchMap.id + '/services';
 		sourceName =  'getservice'
 	} 
-	if (branchId !== undefined && serviceId !== undefined) {
+	if (branchName !== undefined && serviceId !== undefined) {
 		sourceName =  'getticket'
 	}
 
