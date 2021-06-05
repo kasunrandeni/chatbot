@@ -6,8 +6,8 @@ const https = require('https')
 const app = express()
 const port = process.env.PORT || 3001
 
-const hostName = ''
-const basicAuth = ''
+const hostName = 'msqa01.qmatic.cloud'
+const basicAuth = 'Basic dGVzdDpUZXN0QDIwMjE='
 
 
 app.use(express.json())
@@ -21,62 +21,37 @@ app.listen(port, () => {
 	console.log(`🌏 Server is running at http://localhost:${port}`)
 })
 
-app.post('/getbranches', (req, res) => {
+app.post('/getticket', (req, res) => {
 
-  var options = {
-    host: hostName,
-    port: 443,
-    path: '/rest/entrypoint/branches',
-    // authentication headers
-    headers: {
-       'Authorization': basicAuth
-    }   
-  };
+	const branchId = req.body.queryResult.parameters.branch
 
+	console.log(branchId)
 
-	https.get(
-		options,
-		responseFromAPI => {
-			let completeResponse = ''
-			responseFromAPI.on('data', chunk => {
-				completeResponse += chunk
-			})
-			responseFromAPI.on('end', () => {
-				const branches = JSON.parse(completeResponse)
+	const serviceId = req.body.queryResult.parameters.service
 
-				return res.json({
-					fulfillmentText: branches[0].name,
-					source: 'getbranches'
-				})
-			})
-		},
-		error => {
-			return res.json({
-				fulfillmentText: 'Could not get results at this time',
-				source: 'getbranches'
-			})
-		}
-	)
-})
+	console.log(serviceId)
 
-app.post('/getservices', (req, res) => {
-
-	const branchId =
-		req.body.result && req.body.result.parameters && req.body.result.parameters.branch
-			? req.body.result.parameters.branch
-			: ''
+	var reqPath = '/rest/entrypoint/branches';
+	var sourceName = 'getbranch'
+	if (branchId !== undefined) {
+		reqPath = '/rest/entrypoint/branches/' + branchId + '/services';
+		sourceName =  'getservice'
+	} 
+	if (branchId !== undefined && serviceId !== undefined) {
+		sourceName =  'getticket'
+	}
 
 	var options = {
 	  host: hostName,
 	  port: 443,
-	  path: '/rest/entrypoint/branches/' + branchId + '/services',
+	  path: reqPath,
 	  // authentication headers
 	  headers: {
 		 'Authorization': basicAuth
 	  }   
 	};
   
-  
+  console.log(reqPath)
 	  https.get(
 		  options,
 		  responseFromAPI => {
@@ -85,61 +60,24 @@ app.post('/getservices', (req, res) => {
 				  completeResponse += chunk
 			  })
 			  responseFromAPI.on('end', () => {
-				  const services = JSON.parse(completeResponse)
+				  const resObj = JSON.parse(completeResponse)
   
+				  var resText = ''
+				  if (sourceName === 'getbranch') {
+					  resText = resObj[0].name
+				  }  else if (sourceName === 'getservice') {
+					  resText = resObj[0].externalName
+				  }
 				  return res.json({
-					  fulfillmentText: services[0].externalName,
-					  source: 'getservices'
+					  fulfillmentText: resText,
+					  source: sourceName
 				  })
 			  })
 		  },
 		  error => {
 			  return res.json({
 				  fulfillmentText: 'Could not get results at this time',
-				  source: 'getservices'
-			  })
-		  }
-	  )
-  })
-
-  app.post('/getticket', (req, res) => {
-
-	const branchId =
-		req.body.result && req.body.result.parameters && req.body.result.parameters.branch
-			? req.body.result.parameters.branch
-			: ''
-
-	var options = {
-	  host: hostName,
-	  port: 443,
-	  path: '/rest/entrypoint/branches/' + branchId + '/services',
-	  // authentication headers
-	  headers: {
-		 'Authorization': basicAuth
-	  }   
-	};
-  
-  
-	  https.get(
-		  options,
-		  responseFromAPI => {
-			  let completeResponse = ''
-			  responseFromAPI.on('data', chunk => {
-				  completeResponse += chunk
-			  })
-			  responseFromAPI.on('end', () => {
-				  const services = JSON.parse(completeResponse)
-  
-				  return res.json({
-					  fulfillmentText: services[0].externalName,
-					  source: 'getticket'
-				  })
-			  })
-		  },
-		  error => {
-			  return res.json({
-				  fulfillmentText: 'Could not get results at this time',
-				  source: 'getticket'
+				  source: sourceName
 			  })
 		  }
 	  )
