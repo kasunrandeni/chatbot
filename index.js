@@ -69,20 +69,14 @@ app.post('/getticket', (req, res) => {
 	var reqPath = '';
 	var sourceName = 'getbranch'
 	if  (action === 'getbranches') {
-		var branchRes = {
-			"fulfillmentMessages": [
-			  {
-				"text": {
-				  "text": []
-				}
-			  }
-			]
-		  }
+		var t = '';
 		branchData.forEach(x => {
-			branchRes.fulfillmentMessages[0].text.text.push(x.name)
+			t = t + '\n' + x.name
 		});
-		
-		return res.json(branchRes)
+		return res.json({
+			fulfillmentText: t,
+			source: action
+		})
 	}
 	if (action === 'getservices') {
 		let branchMap = branchData.find(x =>{
@@ -118,20 +112,14 @@ app.post('/getticket', (req, res) => {
   
 				  var resText = ''
 				  if (action === 'getservices') {
-					var serviceRes = {
-						"fulfillmentMessages": [
-						  {
-							"text": {
-							  "text": []
-							}
-						  }
-						]
-					  }
+					var t = '';
 					resObj.forEach(x => {
-						serviceRes.fulfillmentMessages[0].text.text.push(x.externalName)
+						t = t + '\n' + x.externalName
 					});
-
-					return res.json(serviceRes)
+					return res.json({
+						fulfillmentText: t,
+						source: action
+					})
 				  }
 			  })
 		  },
