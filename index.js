@@ -7,39 +7,9 @@ const app = express()
 const port = process.env.PORT || 3001
 
 const hostName = 'msqa01.qmatic.cloud'
-const basicAuth = 'Basic dGVzdDpUZXN0QDIwMjE='
 
 var branchData = [];
-
-const loadBranches = function(){
-	var options = {
-		host: hostName,
-		port: 443,
-		path: '/rest/entrypoint/branches',
-		// authentication headers
-		headers: {
-		   'Authorization': basicAuth
-		}   
-	  };
-	
-	https.get(
-		options,
-		responseFromAPI => {
-			let completeResponse = ''
-			responseFromAPI.on('data', chunk => {
-				completeResponse += chunk
-			})
-			responseFromAPI.on('end', () => {
-				const resObj = JSON.parse(completeResponse)
-				branchData = resObj;
-			})
-		},
-		error => {
-			console.log('error for load branches')
-		}
-	)
-}
-
+var serviceData = [];
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
@@ -49,7 +19,6 @@ app.get('/', (req, res) => {
 })
 
 app.listen(port, () => {
-	loadBranches();
 	console.log(`🌏 Server is running at http://localhost:${port}`)
 })
 
@@ -57,49 +26,42 @@ app.post('/getticket', (req, res) => {
 
 	const action = req.body.queryResult.action;
 	const branchName = req.body.queryResult.parameters.branch
+	var authToken = req.headers['authorization'];
 
-	console.log('action name --- ' + action)
-
-	const serviceId = req.body.queryResult.parameters.service
-
-	console.log('branch - ' + branchName + ' --- service - ' + serviceId)
-
-	console.log(serviceId)
+	const serviceName = req.body.queryResult.parameters.service
 
 	var reqPath = '';
-	var sourceName = 'getbranch'
+	var reqMethod = '';
 	if  (action === 'getbranches') {
-		var t = '';
-		branchData.forEach(x => {
-			t = t + '\n' + x.name
-		});
-		return res.json({
-			fulfillmentText: t,
-			source: action
-		})
+		reqMethod = 'GET';
+		reqPath = '/qsystem/mobile/rest/v2/branches/?longitude=0&latitude=0&radius=2147483647';
 	}
 	if (action === 'getservices') {
+		reqMethod = 'GET';
+		reqPath = '/qsystem/mobile/rest/v2/services/';
+	} 
+	if (action === 'getticket') {
+		reqMethod = 'POST';
 		let branchMap = branchData.find(x =>{
 			return x.name === branchName;
 		})
-		reqPath = '/rest/entrypoint/branches/' + branchMap.id + '/services';
-		sourceName =  'getservice'
-	} 
-	if (branchName !== undefined && serviceId !== undefined) {
-		sourceName =  'getticket'
+		let serviceMap = serviceData.find(x =>{
+			return x.name === serviceName;
+		})
+		reqPath = '/qsystem/mobile/rest/v2/services/'+ serviceMap.id +'/branches/'+ branchMap.id +'/ticket/issue/';
 	}
 
 	var options = {
 	  host: hostName,
 	  port: 443,
 	  path: reqPath,
+	  method: reqMethod,
 	  // authentication headers
 	  headers: {
-		 'Authorization': basicAuth
+		 'Authorization': authToken
 	  }   
 	};
-  
-  console.log(reqPath)
+      console.log(reqPath)
 	  https.get(
 		  options,
 		  responseFromAPI => {
@@ -108,25 +70,50 @@ app.post('/getticket', (req, res) => {
 				  completeResponse += chunk
 			  })
 			  responseFromAPI.on('end', () => {
-				  const resObj = JSON.parse(completeResponse)
-  
-				  var resText = ''
+				var resObj = '';
+			
+				  try{
+					resObj = JSON.parse(completeResponse);
+				  } catch(e){
+					return res.json({
+						fulfillmentText: 'Somthing wrong with server' + completeResponse,
+						source: action
+					});
+				  }
+				  
 				  if (action === 'getservices') {
+					serviceData = resObj;
 					var t = '';
 					resObj.forEach(x => {
-						t = t + '\n' + x.externalName
+						t = t + '\n' + x.name
 					});
 					return res.json({
 						fulfillmentText: t,
 						source: action
 					})
+				  } else if (action === 'getbranches') {
+					  branchData = resObj;
+					  var t = '';
+					  resObj.forEach(x => {
+						t = t + '\n' + x.name
+					  });
+					  return res.json({
+						fulfillmentText: t,
+						source: action
+					  })
+				  } else if (action === 'getticket') {
+					return res.json({
+						fulfillmentText: resObj.ticketNumber,
+						source: action
+					  })
 				  }
+				  
 			  })
 		  },
 		  error => {
 			  return res.json({
 				  fulfillmentText: 'Could not get results at this time',
-				  source: sourceName
+				  source: action
 			  })
 		  }
 	  )
