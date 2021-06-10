@@ -1,15 +1,13 @@
 const express = require('express')
 // will use this later to send requests
 const https = require('https')
+const http = require('http')
 // import env variables
 
 const app = express()
 const port = process.env.PORT || 3001
 
-const hostName = 'msqa01.qmatic.cloud'
-
-var branchData = [];
-var serviceData = [];
+var sessionData = [];
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
@@ -22,33 +20,116 @@ app.listen(port, () => {
 	console.log(`🌏 Server is running at http://localhost:${port}`)
 })
 
+const buildResponse = function(resObj, objName, action){
+	var t = '';
+	resObj.forEach(x => {
+		t = t + '\n' + x[objName]
+	});
+	return {
+		fulfillmentText: t,
+		source: action
+	}
+}
+
+const updateSessionData = function(sessionObj, resObj, action) {
+	var obj = sessionData.find(x => {
+		return x.session === sessionObj
+	})
+	
+	if (obj) {
+		let index = sessionData.indexOf(obj);
+		if(action === 'getbranches'){
+			sessionData[index].branches = resObj
+		} else if (action === 'getservices'){
+			sessionData[index].services = resObj
+		}
+	}  else {
+		var newSessionObj = {
+			session : sessionObj
+		}
+		if(action === 'getbranches'){
+			newSessionObj.branches = resObj
+		} else if (action === 'getservices'){
+			newSessionObj.services = resObj
+		}
+
+		sessionData.push(newSessionObj);
+	}
+}
+
+const clearSession = function(session){
+	sessionData = sessionData.find(x => {
+		return x.session !== session
+	})
+}
+
 app.post('/getticket', (req, res) => {
 
 	const action = req.body.queryResult.action;
 	const branchName = req.body.queryResult.parameters.branch
-	var authToken = req.headers['authorization'];
+	var authToken = req.headers['auth-token'];
+	var hostName = req.headers['api-gw']; 
+	var isSSL = req.headers['api-gw-ssl'] === 'true' ? true :  false; 
 
-	const serviceName = req.body.queryResult.parameters.service
+	const serviceName = req.body.queryResult.parameters.service;
+
+	const session = req.body.session;
+	const userSession = sessionData.find(x=>{
+		return x.session === session;
+	})
 
 	var reqPath = '';
 	var reqMethod = '';
 	if  (action === 'getbranches') {
-		reqMethod = 'GET';
-		reqPath = '/qsystem/mobile/rest/v2/branches/?longitude=0&latitude=0&radius=2147483647';
+		if (userSession && userSession.branches){
+			return res.json(buildResponse(userSession.branches, 'name', action));
+		} else {
+			reqMethod = 'GET';
+			reqPath = '/geo/branches/?longitude=0&latitude=0&radius=2147483647';
+		}
 	}
 	if (action === 'getservices') {
-		reqMethod = 'GET';
-		reqPath = '/qsystem/mobile/rest/v2/services/';
+		if (userSession && userSession.services){
+			return res.json(buildResponse(userSession.services, 'serviceName', action))
+		} else {
+			if (userSession.branches) {
+				const selectedBranch = userSession.branches.find(x=>{
+					return x.name === branchName;
+				})
+				if (selectedBranch) {
+					reqMethod = 'GET';
+					reqPath = '/MobileTicket/branches/' + selectedBranch.id + '/services/wait-info';
+				} else {
+					return res.json({
+						fulfillmentText: 'Please select branch first',
+						source: action
+					  })
+				}
+			} else {
+				return res.json({
+					fulfillmentText: 'Please select branch first',
+					source: action
+				  })
+			}
+		}
 	} 
 	if (action === 'getticket') {
-		reqMethod = 'POST';
-		let branchMap = branchData.find(x =>{
+		let selectedBranch = userSession.branches.find(x =>{
 			return x.name === branchName;
 		})
-		let serviceMap = serviceData.find(x =>{
-			return x.name === serviceName;
+		let selectedService = userSession.services.find(x =>{
+			return x.serviceName === serviceName;
 		})
-		reqPath = '/qsystem/mobile/rest/v2/services/'+ serviceMap.id +'/branches/'+ branchMap.id +'/ticket/issue/';
+
+		if (selectedBranch && selectedService) {
+			reqMethod = 'POST';
+			reqPath = '/MobileTicket/services/'+selectedService.serviceId+'/branches/'+selectedBranch.id+'/ticket/issue';
+		} else {
+			return res.json({
+				fulfillmentText: 'Please select branch & service first',
+				source: action
+			  })
+		}
 	}
 
 	var options = {
@@ -58,11 +139,17 @@ app.post('/getticket', (req, res) => {
 	  method: reqMethod,
 	  // authentication headers
 	  headers: {
-		 'Authorization': authToken
+		 'auth-token': authToken
 	  }   
 	};
       console.log(reqPath)
-	  https.get(
+	var hostFramework;
+	if  (isSSL){
+		hostFramework  = https;
+	} else  {
+		hostFramework =  http;
+	}
+	  hostFramework.get(
 		  options,
 		  responseFromAPI => {
 			  let completeResponse = ''
@@ -82,28 +169,17 @@ app.post('/getticket', (req, res) => {
 				  }
 				  
 				  if (action === 'getservices') {
-					serviceData = resObj;
-					var t = '';
-					resObj.forEach(x => {
-						t = t + '\n' + x.name
-					});
-					return res.json({
-						fulfillmentText: t,
-						source: action
-					})
+					updateSessionData(session ,resObj, action)
+					return res.json(buildResponse(resObj, 'serviceName', action));
 				  } else if (action === 'getbranches') {
-					  branchData = resObj;
-					  var t = '';
-					  resObj.forEach(x => {
-						t = t + '\n' + x.name
-					  });
-					  return res.json({
-						fulfillmentText: t,
-						source: action
-					  })
+					updateSessionData(session, resObj, action)
+					return res.json(buildResponse(resObj, 'name', action));
 				  } else if (action === 'getticket') {
+					clearSession(session)
+					var mobileTicket = isSSL ? 'https://' : 'http://';
+					mobileTicket = mobileTicket + hostName + '/ticket?branch='+ resObj.branchId +'&visit='+  resObj.visitId +'&checksum=' + resObj.checksum
 					return res.json({
-						fulfillmentText: resObj.ticketNumber,
+						fulfillmentText: 'Create ticket ' + resObj.ticketNumber + ' for your request.  \n Please access your ticket through ' + mobileTicket,
 						source: action
 					  })
 				  }
