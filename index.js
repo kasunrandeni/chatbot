@@ -21,13 +21,78 @@ app.listen(port, () => {
 })
 
 const buildResponse = function(resObj, objName, action){
-	var t = '';
+	var tmp = [];
 	resObj.forEach(x => {
-		t = t + '\n' + x[objName]
+		tmp.push(x[objName])
 	});
 	return {
-		fulfillmentText: t,
-		source: action
+		fulfillmentMessages: [
+			{
+				"quickReplies": {
+				  "title": action === 'getbranches' ? "Please select your branch" : "Please select your service",
+				  "quickReplies": tmp
+				},
+				"platform": "TELEGRAM"
+			},
+			{
+				"quickReplies": {
+				  "title": action === 'getbranches' ? "Please select your branch" : "Please select your service",
+				  "quickReplies": tmp
+				},
+				"platform": "FACEBOOK"
+			},
+			{
+				"text": {
+				  "text": [
+					action === 'getbranches' ? "Please select your branch" : "Please select your service" + ' ---- ' + tmp.toString(),
+				  ]
+				}
+			}
+		]
+	}
+}
+
+const buildTicketResponse = function(resObj, isSSL, hostName){
+	var mobileTicketUrl = isSSL ? 'https://' : 'http://';
+					  mobileTicket = mobileTicket + hostName + '/ticket?branch='+ resObj.branchId +'&visit='+  resObj.visitId +'&checksum=' + resObj.checksum
+	return {
+		fulfillmentMessages: [
+			{
+			  "card": {
+				"title": "Mobile Ticket",
+				"subtitle": resObj.ticketNumber,
+				"imageUri": "https://lp.qmatic.com/hs-fs/hubfs/UK_MobileTicket_March2018/UK_MobileTicketonSamsung_2018.png?width=196&name=UK_MobileTicketonSamsung_2018.png",
+				"buttons": [
+				  {
+					"text": "Open Mobile Ticket",
+					"postback": mobileTicketUrl
+				  }
+				]
+			  },
+			  "platform": "TELEGRAM"
+			},
+			{
+			  "card": {
+				"title": "Mobile Ticket",
+				"subtitle": resObj.ticketNumber,
+				"imageUri": "https://lp.qmatic.com/hs-fs/hubfs/UK_MobileTicket_March2018/UK_MobileTicketonSamsung_2018.png?width=196&name=UK_MobileTicketonSamsung_2018.png",
+				"buttons": [
+				  {
+					"text": "Open Mobile Ticket",
+					"postback": mobileTicketUrl
+				  }
+				]
+			  },
+			  "platform": "FACEBOOK"
+			},
+			{
+			  "text": {
+				"text": [
+					"Create ticket " + resObj.ticketNumber + " for your request.  \n Please access your ticket through " + mobileTicketUrl
+				]
+			  }
+			}
+		  ]
 	}
 }
 
@@ -176,12 +241,7 @@ app.post('/getticket', (req, res) => {
 					return res.json(buildResponse(resObj, 'name', action));
 				  } else if (action === 'getticket') {
 					clearSession(session)
-					var mobileTicket = isSSL ? 'https://' : 'http://';
-					mobileTicket = mobileTicket + hostName + '/ticket?branch='+ resObj.branchId +'&visit='+  resObj.visitId +'&checksum=' + resObj.checksum
-					return res.json({
-						fulfillmentText: 'Create ticket ' + resObj.ticketNumber + ' for your request.  \n Please access your ticket through ' + mobileTicket,
-						source: action
-					  })
+					return res.json(buildTicketResponse(resObj, isSSL, hostName));
 				  }
 				  
 			  })
