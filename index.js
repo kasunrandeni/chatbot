@@ -61,7 +61,7 @@ const buildTicketResponse = function(resObj, isSSL, hostName){
 			  "card": {
 				"title": "Mobile Ticket",
 				"subtitle": resObj.ticketNumber,
-				"imageUri": "https://lp.qmatic.com/hs-fs/hubfs/UK_MobileTicket_March2018/UK_MobileTicketonSamsung_2018.png?width=196&name=UK_MobileTicketonSamsung_2018.png",
+				"imageUri": "https://www.qmatic.com/hubfs/images/gl/lp/mobile%20ticket.png",
 				"buttons": [
 				  {
 					"text": "Open Mobile Ticket",
@@ -75,7 +75,7 @@ const buildTicketResponse = function(resObj, isSSL, hostName){
 			  "card": {
 				"title": "Mobile Ticket",
 				"subtitle": resObj.ticketNumber,
-				"imageUri": "https://lp.qmatic.com/hs-fs/hubfs/UK_MobileTicket_March2018/UK_MobileTicketonSamsung_2018.png?width=196&name=UK_MobileTicketonSamsung_2018.png",
+				"imageUri": "https://www.qmatic.com/hubfs/images/gl/lp/mobile%20ticket.png",
 				"buttons": [
 				  {
 					"text": "Open Mobile Ticket",
