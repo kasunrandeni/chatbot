@@ -125,7 +125,8 @@ const updateSessionData = function(sessionObj, resObj, action) {
 const clearSession = function(session){
 	sessionData = sessionData.find(x => {
 		return x.session !== session
-	})
+	}) || []
+	console.log(sessionData);
 }
 
 app.post('/getticket', (req, res) => {
