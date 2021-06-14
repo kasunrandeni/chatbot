@@ -44,7 +44,7 @@ const buildResponse = function(resObj, objName, action){
 			{
 				"text": {
 				  "text": [
-					action === ('getbranches' ? "Please select your branch" : "Please select your service") + ' ---- ' + tmp.toString(),
+					(action === 'getbranches' ? "What is your preferred branch?" : "What is your preferred service?") + ' ---- ' + tmp.toString(),
 				  ]
 				}
 			}
