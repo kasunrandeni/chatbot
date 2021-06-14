@@ -44,7 +44,7 @@ const buildResponse = function(resObj, objName, action){
 			{
 				"text": {
 				  "text": [
-					(action === 'getbranches' ? "What is your preferred branch?" : "What is your preferred service?") + ' ---- ' + tmp.toString(),
+					(action === 'getbranches' ? "What is your preferred branch?" : "What is your preferred service?") + ' ' + tmp.toString(),
 				  ]
 				}
 			}
@@ -54,7 +54,7 @@ const buildResponse = function(resObj, objName, action){
 
 const buildTicketResponse = function(resObj, isSSL, hostName){
 	var mobileTicketUrl = isSSL ? 'https://' : 'http://';
-					  mobileTicket = mobileTicket + hostName + '/ticket?branch='+ resObj.branchId +'&visit='+  resObj.visitId +'&checksum=' + resObj.checksum
+	mobileTicketUrl = mobileTicketUrl + hostName + '/ticket?branch='+ resObj.branchId +'&visit='+  resObj.visitId +'&checksum=' + resObj.checksum
 	return {
 		fulfillmentMessages: [
 			{
