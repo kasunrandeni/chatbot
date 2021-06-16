@@ -25,18 +25,19 @@ const buildResponse = function(resObj, objName, action){
 	resObj.forEach(x => {
 		tmp.push(x[objName])
 	});
+	tmp.sort();
 	return {
 		fulfillmentMessages: [
 			{
 				"quickReplies": {
-				  "title": action === 'getbranches' ? "Please select your branch" : "Please select your service",
+				  "title": action === 'getbranches' ? "Could you please select a branch?" : "The following services are offered by this branch. Could you please select a service?",
 				  "quickReplies": tmp
 				},
 				"platform": "TELEGRAM"
 			},
 			{
 				"quickReplies": {
-				  "title": action === 'getbranches' ? "Please select your branch" : "Please select your service",
+				  "title": action === 'getbranches' ? "Could you please select a branch?" : "The following services are offered by this branch. Could you please select a service?",
 				  "quickReplies": tmp
 				},
 				"platform": "FACEBOOK"
@@ -44,7 +45,7 @@ const buildResponse = function(resObj, objName, action){
 			{
 				"text": {
 				  "text": [
-					(action === 'getbranches' ? "What is your preferred branch?" : "What is your preferred service?") + '\n' + tmp.toString().replace(/,/g, '\n'),
+					(action === 'getbranches' ? "Could you please select a branch?" : "The following services are offered by this branch. Could you please select a service?") + '\n' + tmp.toString().replace(/,/g, '\n'),
 				  ]
 				}
 			}
@@ -52,15 +53,14 @@ const buildResponse = function(resObj, objName, action){
 	}
 }
 
-const buildTicketResponse = function(resObj, isSSL, hostName){
-	var mobileTicketUrl = isSSL ? 'https://' : 'http://';
-	mobileTicketUrl = mobileTicketUrl + hostName + '/ticket?branch='+ resObj.branchId +'&visit='+  resObj.visitId +'&checksum=' + resObj.checksum
+const buildTicketResponse = function(resObj, hostName){
+	var mobileTicketUrl = 'http://ec2-18-203-139-64.eu-west-1.compute.amazonaws.com:81' + '/ticket?branch='+ resObj.branchId +'&visit='+  resObj.visitId +'&checksum=' + resObj.checksum
 	return {
 		fulfillmentMessages: [
 			{
 			  "card": {
-				"title": "Mobile Ticket",
-				"subtitle": resObj.ticketNumber,
+				"title": "Ticket has been successfully created.",
+				"subtitle": "Your ticket number is " + resObj.ticketNumber,
 				"imageUri": "https://www.qmatic.com/hubfs/images/gl/lp/mobile%20ticket.png",
 				"buttons": [
 				  {
@@ -73,8 +73,8 @@ const buildTicketResponse = function(resObj, isSSL, hostName){
 			},
 			{
 			  "card": {
-				"title": "Mobile Ticket",
-				"subtitle": resObj.ticketNumber,
+				"title": "Ticket has been successfully created.",
+				"subtitle": "Your ticket number is " + resObj.ticketNumber,
 				"imageUri": "https://www.qmatic.com/hubfs/images/gl/lp/mobile%20ticket.png",
 				"buttons": [
 				  {
@@ -88,7 +88,7 @@ const buildTicketResponse = function(resObj, isSSL, hostName){
 			{
 			  "text": {
 				"text": [
-					"Create ticket " + resObj.ticketNumber + " for your request.  \n Please access your ticket through " + mobileTicketUrl
+					"Ticket has been successfully created. Your ticket number is " + resObj.ticketNumber + "\n Please access your ticket through " + mobileTicketUrl
 				]
 			  }
 			}
